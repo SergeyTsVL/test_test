@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div style="max-width: 700px; margin: 60px auto; text-align: center;">
+    <h1 style="font-size: 48px; margin-bottom: 16px;">
+      Доступ только для стримеров
+    </h1>
+
+    <p style="font-size: 18px; color: #666; margin-bottom: 28px;">
+      У вас нет прав для запуска стрима. Зарегистрируйтесь как стример.
+    </p>
+
+    <button type="button"
+            onclick="history.back()"
+            style="font-size: 18px; padding: 12px 22px; cursor: pointer;">
+      Назад
+    </button>
+    <button type="button"
+            onclick="window.location.href='{% url 'home' %}'"
+            style="font-size: 18px; padding: 12px 22px; cursor: pointer;">
+      Смотреть стримы
+    </button>
+    <!-- альтернативно: ссылка на главную -->
+    <!-- <a href="{% url 'home' %}" style="font-size:18px;">На главную</a> -->
+  </div>
+{% endblock %}

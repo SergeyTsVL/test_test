@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ stream_user }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    .layout { display: grid; grid-template-columns: 700px 1fr; gap: 16px; align-items: start; }
+    .panel { border: 1px solid #ddd; padding: 12px; border-radius: 8px; }
+    #chat { border:1px solid #ccc; padding:8px; height:220px; overflow:auto; background:#fafafa; }
+    #users { margin: 0; padding-left: 18px; }
+    video { width: 640px; background:#000; border-radius: 8px; }
+    .muted-note { color: #666; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <p><b>ROOM:</b> {{ room }}</p>
+  <h1>Смотрим трансляцию пользователя {{ stream_user }}</h1>
+
+  <div class="layout">
+    <div class="panel">
+      <h3>Трансляция</h3>
+      <div class="muted-note">
+        Браузер может блокировать автозапуск звука. Нажмите “Включить звук”.
+      </div>
+
+      <button id="startSound" type="button">Включить звук</button>
+      <video id="remote" autoplay playsinline controls></video>
+
+      <div id="status" class="muted-note" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="panel">
+      <h3>Зрители онлайн</h3>
+      <ul id="users"></ul>
+
+      <h3 style="margin-top:16px;">Чат</h3>
+      <div id="chat"></div>
+
+      <form id="chatForm" style="margin-top:8px; display:flex; gap:8px;">
+        <input id="chatInput" placeholder="Написать сообщение..." style="flex:1;" autocomplete="off" />
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ---------------------------
+    // 1) WebSocket connect
+    // ---------------------------
+    const room = "{{ room }}";
+    const wsScheme = (location.protocol === "https:") ? "wss" : "ws";
+    const ws = new WebSocket(`${wsScheme}://${location.host}/ws/stream/${room}/viewer/`);
+
+    const statusEl = document.getElementById("status");
+    const remoteVideo = document.getElementById("remote");
+
+    // для автозапуска: стартуем muted=true, потом по кнопке включаем
+    remoteVideo.muted = true;
+
+    document.getElementById("startSound").onclick = async () => {
+      remoteVideo.muted = false;
+      try { await remoteVideo.play(); } catch (e) {}
+    };
+
+    // ---------------------------
+    // 2) WebRTC (viewer has 1 pc)
+    // ---------------------------
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+    });
+
+    pc.onicecandidate = (e) => {
+      if (e.candidate) {
+        ws.send(JSON.stringify({ type: "ice", data: e.candidate }));
+      }
+    };
+
+    pc.ontrack = (e) => {
+      // здесь будет поток с видео+аудио
+      remoteVideo.srcObject = e.streams[0];
+      statusEl.textContent = "Поток получен (video/audio tracks)";
+    };
+
+    // ---------------------------
+    // 3) UI: presence + chat
+    // ---------------------------
+    function renderUsers(users) {
+      const ul = document.getElementById("users");
+      ul.innerHTML = "";
+      users.forEach(u => {
+        const li = document.createElement("li");
+        li.textContent = u;
+        ul.appendChild(li);
+      });
+    }
+
+    function addChatLine(from, text) {
+      const box = document.getElementById("chat");
+      const line = document.createElement("div");
+      line.textContent = `${from}: ${text}`;
+      box.appendChild(line);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    document.getElementById("chatForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const input = document.getElementById("chatInput");
+      const text = input.value.trim();
+      if (!text) return;
+
+      ws.send(JSON.stringify({ type: "chat", text }));
+      input.value = "";
+    });
+
+    // ---------------------------
+    // 4) WebSocket events
+    // ---------------------------
+    ws.onopen = () => {
+      statusEl.textContent = "WS: подключен, ждём offer от стримера...";
+    };
+
+    ws.onclose = () => {
+      statusEl.textContent = "WS: отключен";
+    };
+
+    ws.onmessage = async (evt) => {
+      const msg = JSON.parse(evt.data);
+
+      // presence
+      if (msg.type === "presence") {
+        renderUsers(msg.users);
+        return;
+      }
+
+      // chat
+      if (msg.type === "chat") {
+        addChatLine(msg.from, msg.text);
+        return;
+      }
+
+      // WebRTC signaling
+      if (msg.type === "offer") {
+        await pc.setRemoteDescription(msg.data);
+
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+
+        ws.send(JSON.stringify({ type: "answer", data: pc.localDescription }));
+        return;
+      }
+
+      if (msg.type === "ice") {
+        try { await pc.addIceCandidate(msg.data); } catch (e) {}
+        return;
+      }
+    };
+  </script>
+
+
+
+
+
+
+
+<h3>Объявления {{ stream_user.username }}</h3>
+
+<div class="container-fluid py-3">
+  <div class="row">
+    {% for ad in user_ads %}
+      <div class="col-12 col-sm-6 col-md-3 mb-4">
+        <div class="card h-100 p-3">
+          <a href="{% url 'ads:ad_detail' ad.id %}">
+            {{ ad.title|default:"(без названия)" }}
+          </a>
+
+          <div class="text-muted small">
+            {{ ad.created_at }}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>У пользователя пока нет объявлений</p>
+    {% endfor %}
+  </div>
+</div>
+
+
+
+
+
+
+</body>
+</html>
+
+
+
+

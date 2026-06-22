@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Результат поиска</h1>
+<ul>
+  {% for i in object_list %}
+    <li>
+      Номер объявления: {{ i.id }}, Заголовок: {{ i.title }}, Описание: {{ i.description }}
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}
