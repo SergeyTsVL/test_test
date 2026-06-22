@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Список предложений для обмена</h1>
+{% if user.is_authenticated %}
+    <a href="{% url 'ads:add_ad' %}"><button type="submit">Добавить заявку</button></a>
+<ul>
+  {% for i in exc %}
+    <h2 ><a href="{% url 'ads:edit_exc' pk=i.pk %}">Предложение №: {{ i.id }} об обмене объявления №{{ i.ad_sender }} на объявление №{{ i.ad_receiver }}</a></h2>
+    <li>
+      <a>Дата поступления предложения: {{ i.created_at }}</a>
+    </li>
+    <li>
+      <a>Статус объявления: "{{ i.status }}"</a>
+    </li>
+    <li>
+      <a>Коментарий: "{{ i.comment }}"</a>
+    </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

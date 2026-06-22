@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Редактирование объявления</h2>
+<form method="post" enctype="multipart/form-data">
+    {% if request.user.is_authenticated %}
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="fieldWrapper">
+            <label>Пользователь: </label>
+            {{ form.user }}
+        </div>
+        <div class="fieldWrapper">
+            <label>Заголовок: </label>
+            {{ form.title }}
+        </div>
+        <div class="fieldWrapper">
+            <label>Изображение: </label>
+            {{ form.image_url }}
+        </div>
+
+        <div class="fieldWrapper">
+            <label>Название видео: </label>
+            {{ form.title_video }}
+        </div>
+        <div class="fieldWrapper">
+            <label>Видео: </label>
+            {{ form.video_file }}
+        </div>
+        <div class="fieldWrapper">
+            <label>Описание: </label>
+            {{ form.description }}
+        </div>
+        <div class="fieldWrapper">
+            <label>Категория: </label>
+            {{ form.category }}
+        </div>
+        <div class="fieldWrapper">
+            <label>Статус: </label>
+            {{ form.status }}
+        </div>
+
+        <button type="submit">Сохранить изменения</button>
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items %}
+                <p>{{ field }}: {{ errors }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endif %}
+</form>
+{% endblock %}
