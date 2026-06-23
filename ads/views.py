@@ -373,7 +373,7 @@ def dev_password_page(request):
 
         if password == "super_secret_password_123":
             request.session['dev_authenticated'] = True
-            request.session.set_expiry(20)
+            request.session.set_expiry(900)
 
             next_url = request.session.pop('next_url', None)
 
